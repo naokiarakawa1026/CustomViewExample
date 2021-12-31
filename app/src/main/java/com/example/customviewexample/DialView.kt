@@ -3,7 +3,6 @@ package com.example.customviewexample
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import kotlin.math.cos
 import kotlin.math.min
@@ -45,7 +44,7 @@ class DialView @JvmOverloads constructor(
     private var radius = 0.0f
     private var fanSpeed = FanSpeed.OFF
     private val pointPosition: PointF = PointF(0.0f, 0.0f)
-    
+
     private var fanSpeedLowColor = 0
     private var fanSpeedMediumColor = 0
     private var fanSpeedMaxColor = 0
@@ -61,22 +60,24 @@ class DialView @JvmOverloads constructor(
         typedArray.recycle()
     }
 
+    // クリックイベントをトリガーに処理を実行する
     override fun performClick(): Boolean {
         if (super.performClick()) return true
         fanSpeed = fanSpeed.next()
         contentDescription = resources.getString(fanSpeed.label)
 
+        // invalidate()を記述しないと実行されない
         invalidate()
         return true
     }
 
+    // customViewのサイズが変わる
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        radius = (min(width, height) / 2.0 * 0.8).toFloat()
+        radius = (min(width, height) / 2.0 * 0.6).toFloat()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
         paint.color = when (fanSpeed)  {
            FanSpeed.OFF -> Color.GRAY
            FanSpeed.LOW -> fanSpeedLowColor
@@ -101,9 +102,13 @@ class DialView @JvmOverloads constructor(
 
     // PointFの型に対してメソッドを定義している
     private fun PointF.computeXYForSpeed(pos: FanSpeed, radius: Float) {
-        val startAngle = Math.PI * ( 9 / 8.0 )
-        val angle = startAngle * pos.ordinal * (Math.PI / 4)
+        val startAngle = Math.PI * (9 / 8.0)
+        // startAngle + pos.ordinalがstartAngle * pos.ordinalになっていた
+        val angle = startAngle + pos.ordinal * (Math.PI / 4)
         x = (radius * cos(angle)).toFloat() + width / 2
-        y = (radius * sin(angle)).toFloat() + width / 2
+
+        // 以下がwidthになっていた
+        y = (radius * sin(angle)).toFloat() + height / 2
     }
+
 }
