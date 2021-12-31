@@ -3,6 +3,7 @@ package com.example.customviewexample
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import kotlin.math.cos
 import kotlin.math.min
@@ -32,15 +33,32 @@ class DialView @JvmOverloads constructor(
     defStyleAttr : Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    // フラグ定数 これを指定するとアンチエイリアス機能付きで、図形が描画されます
+    // Paintクラスを使用することで、形を描くことができる
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        textAlign = Paint.Align.CENTER
+        textSize = 55.0f
+        typeface = Typeface.create("", Typeface.BOLD)
+    }
+
     private var radius = 0.0f
     private var fanSpeed = FanSpeed.OFF
     private val pointPosition: PointF = PointF(0.0f, 0.0f)
+    
     private var fanSpeedLowColor = 0
     private var fanSpeedMediumColor = 0
     private var fanSpeedMaxColor = 0
 
     init {
         isClickable = true
+
+        // initで以下の処理が漏れていた
+        val typedArray = context.obtainStyledAttributes(attrs,R.styleable.DialView)
+        fanSpeedLowColor=typedArray.getColor(R.styleable.DialView_fanColor1,0)
+        fanSpeedMediumColor = typedArray.getColor(R.styleable.DialView_fanColor2,0)
+        fanSpeedMaxColor = typedArray.getColor(R.styleable.DialView_fanColor3,0)
+        typedArray.recycle()
     }
 
     override fun performClick(): Boolean {
@@ -52,26 +70,8 @@ class DialView @JvmOverloads constructor(
         return true
     }
 
-    // フラグ定数 これを指定するとアンチエイリアス機能付きで、図形が描画されます
-    // Paintクラスを使用することで、形を描くことができる
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        textAlign = Paint.Align.CENTER
-        textSize = 55.0f
-        typeface = Typeface.create("", Typeface.BOLD)
-    }
-
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         radius = (min(width, height) / 2.0 * 0.8).toFloat()
-
-    }
-
-    // PointFの型に対してメソッドを定義している
-    private fun PointF.computeXYForSpeed(pos: FanSpeed, radius: Float) {
-        val startAngle = Math.PI * (9/9.0)
-        val angle = startAngle * pos.ordinal * (Math.PI / 4)
-        x = (radius * cos(angle)).toFloat() + width / 2
-        y = (radius * sin(angle)).toFloat() + width / 2
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -84,7 +84,7 @@ class DialView @JvmOverloads constructor(
            FanSpeed.HIGH -> fanSpeedMaxColor
         }
 
-        canvas.drawCircle((width / 2).toFloat(), (height / 2).toFloat(), radius, paint)
+        canvas.drawCircle((width/2).toFloat(), (height / 2).toFloat(), radius, paint)
 
         val markerRadius = radius + RADIUS_OFFSET_INDICATOR
         pointPosition.computeXYForSpeed(fanSpeed, markerRadius)
@@ -97,5 +97,13 @@ class DialView @JvmOverloads constructor(
             val label = resources.getString(i.label)
             canvas.drawText(label, pointPosition.x, pointPosition.y, paint)
         }
+    }
+
+    // PointFの型に対してメソッドを定義している
+    private fun PointF.computeXYForSpeed(pos: FanSpeed, radius: Float) {
+        val startAngle = Math.PI * ( 9 / 8.0 )
+        val angle = startAngle * pos.ordinal * (Math.PI / 4)
+        x = (radius * cos(angle)).toFloat() + width / 2
+        y = (radius * sin(angle)).toFloat() + width / 2
     }
 }
